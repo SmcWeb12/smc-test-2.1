@@ -54,7 +54,7 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
               type="text"
-              placeholder="eg-Name,batch (1-2) phone no-1234567890"
+              placeholder="eg-Name,\n phone (1-2) \n phone no-1234567890"
               className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -93,4 +93,5 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
 
