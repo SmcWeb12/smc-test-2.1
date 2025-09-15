@@ -1,96 +1,173 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { collection, addDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
-const LoginPage = () => {
-  const [name, setName] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
+const TestPage = () => {
+  const [questions, setQuestions] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [timer, setTimer] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fullscreenImg, setFullscreenImg] = useState(null);
   const navigate = useNavigate();
 
-  const images = [
-    "/WhatsApp Image 2025-03-23 at 11.39.11_3681570b.jpg",
-    "/WhatsApp Image 2025-03-23 at 11.41.08_7ef05505.jpg",
-    "/WhatsApp Image 2025-03-25 at 11.25.24_38bc41ba.jpg",
-    "/WhatsApp Image 2025-03-25 at 11.34.10_1066775c.jpg",
-    "/WhatsApp Image 2025-03-25 at 11.38.51_62809e97.jpg",
-    "/WhatsApp Image 2025-04-13 at 11.15.57_800d728b.jpg",
-    "/WhatsApp Image 2025-03-30 at 11.50.12_fa1d50d2.jpg",
-  ];
-
-  // 🔄 Auto Slide
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(interval);
+    const fetchData = async () => {
+      const timerDoc = await getDoc(doc(db, "settings", "timer"));
+      const timerData = timerDoc.exists() ? timerDoc.data().timer : null;
+
+      const questionSnapshot = await getDocs(collection(db, "questions"));
+      const questionList = questionSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => a.questionNumber - b.questionNumber);
+
+      setQuestions(questionList);
+      setTimer(timerData);
+      setLoading(false);
+    };
+
+    fetchData();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name) {
-      alert("Please fill the field");
-      return;
-    }
+  useEffect(() => {
+    if (timer === null) return;
 
-    try {
-      await addDoc(collection(db, "users"), {
-        name, // save only this field
-        createdAt: new Date(),
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleSubmit();
+          alert("⏰ Test time is over! Submitting...");
+          return 0;
+        }
+        return prev - 1;
       });
+    }, 1000);
 
-      localStorage.setItem("testUser", JSON.stringify({ name }));
-      navigate("/disclaimer");
-    } catch (error) {
-      console.error("Error adding user:", error);
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const handleOptionSelect = (option) => {
+    setAnswers({ ...answers, [current]: option });
+  };
+
+  const handleNext = () => {
+    if (current < questions.length - 1) {
+      setCurrent(current + 1);
+    } else {
+      handleSubmit();
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-      <div className="flex flex-col md:flex-row w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Form Section */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center p-8">
-          <h1 className="text-3xl font-bold text-center mb-6">📝 Start Your Test</h1>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="Name, Batch Time 1-2, Phone Number 1234567890"
-              className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
-            >
-              Continue
-            </button>
-          </form>
-        </div>
+  const handlePrevious = () => {
+    if (current > 0) {
+      setCurrent(current - 1);
+    }
+  };
 
-        {/* Image Slider Section */}
-        <div className="w-full md:w-1/2 relative">
-          <img
-            src={images[currentIndex]}
-            alt="Slider"
-            className="w-full h-full object-cover"
-          />
-          {/* Dots Indicator */}
-          <div className="absolute bottom-4 w-full flex justify-center gap-2">
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className={`w-3 h-3 rounded-full ${
-                  i === currentIndex ? "bg-blue-600" : "bg-gray-300"
-                }`}
-              ></span>
-            ))}
-          </div>
+  const handleSubmit = () => {
+    localStorage.setItem("testAnswers", JSON.stringify(answers));
+    localStorage.setItem("testQuestions", JSON.stringify(questions));
+    navigate("/result");
+  };
+
+  const formatTime = (sec) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${h.toString().padStart(2, "0")}h : ${m
+      .toString()
+      .padStart(2, "0")}m : ${s.toString().padStart(2, "0")}s`;
+  };
+
+  if (loading) return <div className="text-center mt-10">⏳ Loading test...</div>;
+  if (questions.length === 0) return <div className="text-center mt-10">No questions found!</div>;
+
+  const q = questions[current];
+
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-start p-4 bg-gray-100">
+      {/* Top Header */}
+      <div className="w-full max-w-5xl flex justify-between items-center bg-white shadow px-6 py-4 mb-4 border-b border-gray-200">
+        <h2 className="font-bold text-xl text-gray-700">
+          Question {current + 1} / {questions.length}
+        </h2>
+        <div className="text-lg font-bold text-red-600">
+          ⏳ {formatTime(timer)}
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 bg-white w-full max-w-5xl p-6 shadow-lg border border-gray-200">
+        {/* Question Image */}
+        <div className="mb-6">
+          <img
+            src={q.imageUrl}
+            alt={`Question ${current + 1}`}
+            className="w-full max-h-[400px] object-cover border border-gray-300 cursor-pointer"
+            onClick={() => setFullscreenImg(q.imageUrl)}
+          />
+        </div>
+
+        {/* Options */}
+        <div className="grid grid-cols-2 gap-4">
+          {["A", "B", "C", "D"].map((opt) => (
+            <label
+              key={opt}
+              className={`p-4 border text-lg font-medium cursor-pointer transition ${
+                answers[current] === opt
+                  ? "bg-blue-600 text-white border-blue-700"
+                  : "bg-gray-50 hover:bg-gray-100"
+              }`}
+            >
+              <input
+                type="radio"
+                name={`q${current}`}
+                value={opt}
+                checked={answers[current] === opt}
+                onChange={() => handleOptionSelect(opt)}
+                className="hidden"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between pt-6">
+          <button
+            onClick={handlePrevious}
+            className="bg-gray-500 text-white px-6 py-3 font-semibold hover:bg-gray-600 transition disabled:opacity-50"
+            disabled={current === 0}
+          >
+            ⬅ Previous
+          </button>
+
+          <button
+            onClick={handleNext}
+            className="bg-blue-600 text-white px-6 py-3 font-semibold hover:bg-blue-700 transition"
+          >
+            {current === questions.length - 1 ? "✅ Submit" : "Next ➡"}
+          </button>
+        </div>
+      </div>
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImg && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50"
+          onClick={() => setFullscreenImg(null)}
+        >
+          <img
+            src={fullscreenImg}
+            alt="Full View"
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 };
 
-export default LoginPage;
+export default TestPage;
