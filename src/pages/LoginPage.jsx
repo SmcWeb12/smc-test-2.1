@@ -1,3 +1,4 @@
+
 // LoginPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,16 +30,16 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name) {
-      alert("Please enter your name");
+      alert("Please enter your data");
       return;
     }
 
     try {
       await addDoc(collection(db, "users"), {
-        name,
+        userData: name,
         createdAt: new Date(),
       });
-      localStorage.setItem("testUser", JSON.stringify({ name }));
+      localStorage.setItem("testUser", JSON.stringify({ userData: name }));
       navigate("/disclaimer");
     } catch (error) {
       console.error("Error adding user:", error);
@@ -52,10 +53,9 @@ const LoginPage = () => {
         <div className="w-full md:w-1/2 flex flex-col justify-center p-8">
           <h1 className="text-3xl font-bold text-center mb-6">📝 Start Your Test</h1>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="eg-Name,\n phone (1-2) \n phone no-1234567890"
-              className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <textarea
+              placeholder={`Your Data:\nName: Mukesh\nClass: 12th\nBatch Time: 1-2\nPhone: 0000000000`}
+              className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 h-32 resize-none"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
