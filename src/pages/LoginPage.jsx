@@ -1,3 +1,4 @@
+// LoginPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, addDoc } from "firebase/firestore";
@@ -5,14 +6,11 @@ import { db } from "../firebase";
 
 const LoginPage = () => {
   const [name, setName] = useState("");
-  const [batch, setBatch] = useState("");
-  const [phone, setPhone] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
 
   const images = [
     "/WhatsApp Image 2025-03-23 at 11.39.11_3681570b.jpg",
-    
     "/WhatsApp Image 2025-03-25 at 11.25.24_38bc41ba.jpg",
     "/WhatsApp Image 2025-03-25 at 11.34.10_1066775c.jpg",
     "/WhatsApp Image 2025-03-25 at 11.38.51_62809e97.jpg",
@@ -24,25 +22,23 @@ const LoginPage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 3000); // 3 sec per slide
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !batch || !phone) {
-      alert("Please fill all fields");
+    if (!name) {
+      alert("Please enter your name");
       return;
     }
 
     try {
       await addDoc(collection(db, "users"), {
         name,
-        batch,
-        phone,
         createdAt: new Date(),
       });
-      localStorage.setItem("testUser", JSON.stringify({ name, batch, phone }));
+      localStorage.setItem("testUser", JSON.stringify({ name }));
       navigate("/disclaimer");
     } catch (error) {
       console.error("Error adding user:", error);
@@ -62,20 +58,6 @@ const LoginPage = () => {
               className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={name}
               onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Batch Time"
-              className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={batch}
-              onChange={(e) => setBatch(e.target.value)}
-            />
-            <input
-              type="tel"
-              placeholder="Phone Number"
-              className="p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
             />
             <button
               type="submit"
@@ -111,4 +93,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
