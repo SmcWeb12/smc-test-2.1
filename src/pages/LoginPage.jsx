@@ -12,7 +12,7 @@ const LoginPage = () => {
 
   const images = [
     "/WhatsApp Image 2025-03-23 at 11.39.11_3681570b.jpg",
-    "/WhatsApp Image 2025-03-23 at 11.41.08_7ef05505.jpg",
+    
     "/WhatsApp Image 2025-03-25 at 11.25.24_38bc41ba.jpg",
     "/WhatsApp Image 2025-03-25 at 11.34.10_1066775c.jpg",
     "/WhatsApp Image 2025-03-25 at 11.38.51_62809e97.jpg",
@@ -111,3 +111,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
